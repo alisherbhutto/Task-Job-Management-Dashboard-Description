@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Task & Job Management Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #16181a 0%, #23272f 100%);
+            color: #e0f7fa;
+            font-family: 'Roboto', 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Futuristic glowing lines */
+        body::before, body::after {
+            content: "";
+            position: fixed;
+            width: 300px;
+            height: 3px;
+            background: linear-gradient(90deg, #00ffe7 0%, #00b3ff 100%);
+            filter: blur(2px);
+            opacity: 0.13;
+            z-index: 1;
+        }
+        body::before {
+            top: 0; left: 15vw;
+            transform: rotate(-1.5deg);
+        }
+        body::after {
+            bottom: 0; right: 13vw;
+            transform: rotate(2deg);
+        }
+
+        .container {
+            flex-grow: 1;
+            z-index: 2;
+        }
+
+        .card {
+            background: rgba(27, 31, 37, 0.74);
+            border-radius: 20px;
+            border: 1.5px solid rgba(0,255,255,0.15);
+            box-shadow:
+                0 0 30px 0 rgba(0,255,255,0.09),
+                0 2px 24px 0 rgba(0,0,0,0.21),
+                0 0 0 2px #23272f;
+            backdrop-filter: blur(18px);
+            transition: box-shadow 0.3s, transform 0.2s;
+        }
+
+        .card:hover {
+            box-shadow: 0 0 32px 4px #00ffe8, 0 2px 32px #23272f;
+            transform: translateY(-3px) scale(1.02);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #1a232c 0%, #242c34 100%);
+            color: #00ffe8;
+            font-weight: 700;
+            border-radius: 20px 20px 0 0;
+            border: none;
+            padding: 1.1rem 1.3rem;
+            box-shadow: 0 1px 6px 0 rgba(0,255,255,0.07) inset;
+            font-family: 'Orbitron', monospace;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .card-title {
+            color: #00fff2;
+            font-size: 1.08rem;
+            margin-bottom: 0.5rem;
+            font-family: 'Orbitron', monospace;
+        }
+
+        .navbar {
+            background: linear-gradient(to right, #141a1f 0%, #18324a 100%);
+            border-bottom: 1.5px solid #222;
+            box-shadow: 0 1px 24px 0 rgba(0,255,255,0.12);
+            padding: 1rem 1.5rem;
+            z-index: 10;
+        }
+
+        .navbar-dark .navbar-brand {
+            color: #00f7ff;
+            font-weight: bold;
+            font-size: 1.6rem;
+            font-family: 'Orbitron', monospace;
+            letter-spacing: 2px;
+            text-shadow: 0 0 12px rgba(0,255,255,0.7);
+        }
+
+        .form-control {
+            background-color: #20252b;
+            color: #fff;
+            border: 1.5px solid #005e6e;
+            border-radius: 18px;
+            box-shadow: 0 0 8px 0 rgba(0,255,255,0.07);
+            transition: box-shadow 0.2s, border 0.2s;
+            font-weight: 500;
+        }
+
+        .form-control:focus {
+            border: 1.5px solid #00ffe6;
+            box-shadow: 0 0 12px #00ffe6;
+        }
+
+        .form-control::placeholder {
+            color: #95bfc6;
+        }
+
+        .card-body h6.card-title {
+            color: #00ffd5;
+            font-weight: 550;
+        }
+
+        /* Summary Cards */
+        .summary-card-value {
+            font-size: 3.1rem;
+            font-weight: bold;
+            color: #e0f7fa;
+            font-family: 'Orbitron', monospace;
+            text-shadow: 0 0 12px #00ffe7, 0 1px 0 #1a232c;
+        }
+
+        .summary-card-label {
+            color: #00ffe1;
+            font-size: 1.03rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .summary-progress-text {
+            color: rgba(224, 247, 250, 0.66);
+            font-size: 0.91rem;
+        }
+
+        .summary-sub-data {
+            color: rgba(224, 247, 250, 0.93);
+            font-size: 1.0rem;
+        }
+
+        .bg-custom-dark {
+            background: rgba(34, 38, 44, 0.82) !important;
+            border-radius: 16px;
+        }
+
+        .border,
+        .border-dark,
+        .border-light {
+            border: 1.5px solid rgba(0,255,255,0.14) !important;
+        }
+
+        hr {
+            border-color: #2b2d2f !important;
+        }
+
+        .table-responsive {
+            border-radius: 14px;
+            overflow: hidden;
+            background: rgba(24, 29, 33, 0.93);
+            box-shadow: 0 0 12px 0 rgba(0,255,255,0.06) inset;
+        }
+
+        table.table {
+            background-color: #192027;
+            color: #e0f7fa;
+        }
+
+        table.table thead {
+            background-color: #1f2d37;
+            border-bottom: 1.5px solid #00ffe7;
+        }
+
+        table.table tbody tr {
+            background-color: #202d35;
+            transition: background 0.2s;
+        }
+
+        table.table tbody tr:hover {
+            background-color: #003e47;
+        }
+
+        table.table tbody tr:nth-child(even) {
+            background-color: #1c2530;
+        }
+
+        .badge {
+            font-size: 0.97em;
+            font-weight: bold;
+            padding: 0.5em 0.9em;
+            border-radius: 14px;
+            letter-spacing: 0.8px;
+            box-shadow: 0 0 6px #00ffe720;
+        }
+
+        canvas {
+            filter: drop-shadow(0 0 11px #00fff2);
+            margin-top: 10px;
+        }
+
+        .btn,
+        .btn:focus,
+        .btn:hover {
+            background: linear-gradient(90deg, #00ffe0 0%, #00c3ff 100%);
+            color: #000;
+            border: none;
+            border-radius: 12px;
+            padding: 7px 20px;
+            font-weight: 600;
+            font-family: 'Orbitron', monospace;
+            box-shadow: 0 0 12px #00ffe7b0;
+            transition: all 0.18s;
+            letter-spacing: 1px;
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        .chart-card-body {
+            background-color: #181f26;
+            border-radius: 0 0 20px 20px;
+        }
+
+        /* Neon border for special header */
+        .glow-header {
+            border-left: 5px solid #00ffe1;
+            padding-left: 20px;
+            font-family: 'Orbitron', monospace;
+            letter-spacing: 2px;
+            color: #00ffe1;
+            font-size: 1.2rem;
+            background: linear-gradient(90deg, #1a232c 60%, transparent);
+            text-shadow: 0 0 9px #00ffe7b0;
+            margin-bottom: 1.2rem;
+        }
+
+        /* Make calendar column match summary cards stack height */
+        @media (min-width: 768px) {
+            .row.mt-4.align-items-stretch {
+                min-height: 520px;
+            }
+            .dashboard-card.card {
+                height: 100%;
+                min-height: 520px;
+                display: flex;
+                flex-direction: column;
+                justify-content: stretch;
+            }
+            .dashboard-card .card-body {
+                flex: 1 1 auto;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+            #calendar-container {
+                flex: 1 1 auto;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+        }
+
+        /* SMALL DONUT CHARTS */
+        .status-donut-canvas {
+            max-width: 110px !important;
+            max-height: 110px !important;
+            width: 110px !important;
+            height: 110px !important;
+            margin: 0 auto;
+            display: block;
+        }
+    </style>
+
+    <!-- Calendar Styles -->
+    <style>
+        #calendar-container {
+            font-family: 'Roboto', Arial, sans-serif;
+            padding: 18px 15px;
+            border-radius: 10px;
+            background-color: #181f26;
+            color: #e0f7fa;
+            box-shadow: 0 0 10px 0 #00ffe71a inset;
+            border: 1.5px solid #00ffe725;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            color: #00ffe8;
+        }
+
+        .calendar-header h2 {
+            font-size: 1.45rem;
+            margin: 0;
+            color: #00f7ff;
+            font-family: 'Orbitron', monospace;
+            letter-spacing: 1.4px;
+        }
+
+        .calendar-nav-btn {
+            background: linear-gradient(90deg, #00f7ff 0%, #00ffe8 100%);
+            color: #192027;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 1.18rem;
+            font-family: 'Orbitron', monospace;
+            font-weight: bold;
+            transition: background 0.2s, box-shadow 0.2s;
+            box-shadow: 0 0 8px #00ffe740;
+        }
+
+        .calendar-nav-btn:hover {
+            background: #00cfe6;
+            color: #0e1c20;
+        }
+
+        .calendar-weekdays,
+        .calendar-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            text-align: center;
+        }
+
+        .calendar-weekdays span {
+            font-weight: bold;
+            color: #00ffe8;
+            padding-bottom: 5px;
+            border-bottom: 1.5px solid #00ffe7;
+            letter-spacing: 0.5px;
+        }
+
+        .calendar-days div {
+            padding: 12px 7px;
+            border-radius: 7px;
+            cursor: pointer;
+            transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.08rem;
+            position: relative;
+            font-family: 'Orbitron', monospace;
+            letter-spacing: 0.5px;
+        }
+
+        .calendar-days div:hover {
+            background-color: #00ffe810;
+            box-shadow: 0 0 6px #00ffe7a0;
+        }
+
+        .calendar-days .current-day {
+            background: linear-gradient(90deg,#00f7ff 40%, #00ffe8 100%);
+            color: #0e1c20;
+            font-weight: bold;
+            box-shadow: 0 2px 12px #00ffe7a0;
+            border: 1.5px solid #00ffe7;
+        }
+
+        .calendar-days .current-day:hover {
+            background: linear-gradient(90deg,#00ffe8 20%, #00f7ff 95%);
+        }
+
+        .calendar-days .inactive {
+            color: #555;
+            cursor: not-allowed;
+            background-color: #1e2022;
+            border: none;
+        }
+
+        /* Event dot styling */
+        .calendar-days div.has-event::after {
+            content: '';
+            position: absolute;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 8px;
+            background-color: #dc3545;
+            border-radius: 50%;
+            box-shadow: 0 0 6px #b7002c;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark px-4">
+        <a class="navbar-brand" href="#">Task & Job Dashboard</a>
+        <div class="ms-auto">
+            <input class="form-control me-2 d-inline" type="search" placeholder="Search tasks/jobs...">
+        </div>
+    </nav>
+
+    <div class="container my-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="card p-3 border-0" style="background: rgba(20, 20, 20, 0.8);">
+                    <div class="glow-header">Job ID: <span style="font-family: 'Orbitron', monospace;">08932</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-4 align-items-stretch">
+            <div class="col-md-6">
+                <div class="row g-3 h-100">
+                    <div class="col-md-6 col-sm-6">
+                        <div class="card h-100 shadow rounded-4 border-0">
+                            <div class="card-body bg-custom-dark">
+                                <p class="summary-card-label mb-1">Total Jobs</p>
+                                <h2 class="summary-card-value">89</h2>
+                                <div class="progress mt-3" style="height: 10px;">
+                                    <div class="progress-bar bg-primary" role="progressbar" style="width: 89%;"
+                                        aria-valuenow="89" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <div class="text-end mt-1 summary-progress-text">
+                                    <span>89% Identified</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-sm-6">
+                        <div class="card h-100 shadow rounded-4 border-0">
+                            <div class="card-body bg-custom-dark">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <p class="summary-card-label mb-1">Total Tasks</p>
+                                        <h2 class="summary-card-value">49</h2>
+                                    </div>
+                                    <div class="text-end ps-3">
+                                        <div class="summary-sub-data">Completed: <strong>30</strong></div>
+                                        <div class="summary-sub-data mt-1">Remaining: <strong>19</strong></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-sm-6">
+                        <div class="card h-100 shadow rounded-4 border-0">
+                            <div class="card-body bg-custom-dark">
+                                <p class="summary-card-label mb-1">Job Completion</p>
+                                <h2 class="summary-card-value">90<small>%</small></h2>
+                                <div class="progress mt-3" style="height: 10px;">
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: 90%;"
+                                        aria-valuenow="90" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <div class="text-end mt-1 summary-progress-text">
+                                    <span>90% Achieved</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 col-sm-6">
+                        <div class="card h-100 shadow rounded-4 border-0">
+                            <div class="card-body bg-custom-dark">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <p class="summary-card-label mb-1">Task Completion</p>
+                                        <h2 class="summary-card-value">61<small>%</small></h2>
+                                    </div>
+                                    <div class="text-end ps-3">
+                                        <div class="summary-sub-data">Completed: <strong>30</strong></div>
+                                        <div class="summary-sub-data mt-1">Remaining: <strong>19</strong></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 d-flex">
+                <div class="dashboard-card card mt-0 w-100">
+                    <div class="card-header fw-bold">Calendar</div>
+                    <div class="card-body bg-dark text-white">
+                        <div id="calendar-container">
+                            <div class="calendar-header">
+                                <button id="prevMonth" class="calendar-nav-btn">&laquo;</button>
+                                <h2 id="currentMonthYear"></h2>
+                                <button id="nextMonth" class="calendar-nav-btn">&raquo;</button>
+                            </div>
+                            <div class="calendar-weekdays">
+                                <span>Sun</span>
+                                <span>Mon</span>
+                                <span>Tue</span>
+                                <span>Wed</span>
+                                <span>Thu</span>
+                                <span>Fri</span>
+                                <span>Sat</span>
+                            </div>
+                            <div class="calendar-days" id="calendarDays">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-12">
+            <div class="card mt-4">
+                <div class="card-header fw-bold text-white bg-dark">Task Distribution by Status</div>
+                <div class="card-body chart-card-body bg-dark text-white">
+                    <div class="row g-3 justify-content-center">
+                        <div class="col-md-3 col-sm-6">
+                            <div class="card p-3 h-100 bg-dark text-white">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title text-info">New Tasks</h6>
+                                    <canvas id="taskStatusChart1" width="110" height="110" class="status-donut-canvas"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <div class="card p-3 h-100 bg-dark text-white">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title text-info">In Progress</h6>
+                                    <canvas id="taskStatusChart2" width="110" height="110" class="status-donut-canvas"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <div class="card p-3 h-100 bg-dark text-white">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title text-info">Completed</h6>
+                                    <canvas id="taskStatusChart3" width="110" height="110" class="status-donut-canvas"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <div class="card p-3 h-100 bg-dark text-white">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title text-info">Overdue Tasks</h6>
+                                    <canvas id="taskStatusChart4" width="110" height="110" class="status-donut-canvas"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-12">
+            <div class="card mt-4">
+                <div class="card-header fw-bold">All Tasks Overview</div>
+                <div class="card-body chart-card-body">
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-dark table-striped table-hover text-white">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>Task ID</th>
+                                    <th>Task Name</th>
+                                    <th>Assigned To</th>
+                                    <th>Status</th>
+                                    <th>Due Date</th>
+                                    <th>Priority</th>
+                                    <th>Job ID</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>T001</td>
+                                    <td>Prepare Q3 Report</td>
+                                    <td>Alice Johnson</td>
+                                    <td><span class="badge bg-warning text-dark">In Progress</span></td>
+                                    <td>2025-07-31</td>
+                                    <td><span class="badge bg-danger">High</span></td>
+                                    <td>08932</td>
+                                    <td><button class="btn btn-sm">View</button></td>
+                                </tr>
+                                <tr>
+                                    <td>T002</td>
+                                    <td>Review Marketing Plan</td>
+                                    <td>Bob Williams</td>
+                                    <td><span class="badge bg-success">Completed</span></td>
+                                    <td>2025-07-20</td>
+                                    <td><span class="badge bg-secondary">Medium</span></td>
+                                    <td>08932</td>
+                                    <td><button class="btn btn-sm">View</button></td>
+                                </tr>
+                                <tr>
+                                    <td>T003</td>
+                                    <td>Client Onboarding Call</td>
+                                    <td>Carol Davis</td>
+                                    <td><span class="badge bg-info">New</span></td>
+                                    <td>2025-08-05</td>
+                                    <td><span class="badge bg-success">Low</span></td>
+                                    <td>08932</td>
+                                    <td><button class="btn btn-sm">View</button></td>
+                                </tr>
+                                <tr>
+                                    <td>T004</td>
+                                    <td>Develop New Feature A</td>
+                                    <td>David Lee</td>
+                                    <td><span class="badge bg-danger">Overdue</span></td>
+                                    <td>2025-07-15</td>
+                                    <td><span class="badge bg-danger">High</span></td>
+                                    <td>08932</td>
+                                    <td><button class="btn btn-sm">View</button></td>
+                                </tr>
+                                <tr>
+                                    <td>T005</td>
+                                    <td>Bug Fix - Login Module</td>
+                                    <td>Alice Johnson</td>
+                                    <td><span class="badge bg-warning text-dark">In Progress</span></td>
+                                    <td>2025-07-28</td>
+                                    <td><span class="badge bg-danger">High</span></td>
+                                    <td>08932</td>
+                                    <td><button class="btn btn-sm">View</button></td>
+                                </tr>
+                                <tr>
+                                    <td>T006</td>
+                                    <td>Update Documentation</td>
+                                    <td>Bob Williams</td>
+                                    <td><span class="badge bg-info">New</span></td>
+                                    <td>2025-08-10</td>
+                                    <td><span class="badge bg-secondary">Medium</span></td>
+                                    <td>08932</td>
+                                    <td><button class="btn btn-sm">View</button></td>
+                                </tr>
+                                <tr>
+                                    <td>T007</td>
+                                    <td>Prepare Sales Pitch</td>
+                                    <td>Carol Davis</td>
+                                    <td><span class="badge bg-warning text-dark">In Progress</span></td>
+                                    <td>2025-08-01</td>
+                                    <td><span class="badge bg-danger">High</span></td>
+                                    <td>08932</td>
+                                    <td><button class="btn btn-sm">View</button></td>
+                                </tr>
+                                <tr>
+                                    <td>T008</td>
+                                    <td>Database Optimization</td>
+                                    <td>David Lee</td>
+                                    <td><span class="badge bg-success">Completed</span></td>
+                                    <td>2025-07-25</td>
+                                    <td><span class="badge bg-secondary">Medium</span></td>
+                                    <td>08932</td>
+                                    <td><button class="btn btn-sm">View</button></td>
+                                </tr>
+                                <tr>
+                                    <td>T009</td>
+                                    <td>UI/UX Feedback Session</td>
+                                    <td>Alice Johnson</td>
+                                    <td><span class="badge bg-info">New</span></td>
+                                    <td>2025-08-15</td>
+                                    <td><span class="badge bg-success">Low</span></td>
+                                    <td>08932</td>
+                                    <td><button class="btn btn-sm">View</button></td>
+                                </tr>
+                                <tr>
+                                    <td>T010</td>
+                                    <td>Server Maintenance</td>
+                                    <td>Bob Williams</td>
+                                    <td><span class="badge bg-danger">Overdue</span></td>
+                                    <td>2025-07-10</td>
+                                    <td><span class="badge bg-danger">High</span></td>
+                                    <td>08932</td>
+                                    <td><button class="btn btn-sm">View</button></td>
+                                </tr>
+                                <tr>
+                                    <td>T011</td>
+                                    <td>Content Creation</td>
+                                    <td>Carol Davis</td>
+                                    <td><span class="badge bg-warning text-dark">In Progress</span></td>
+                                    <td>2025-08-07</td>
+                                    <td><span class="badge bg-secondary">Medium</span></td>
+                                    <td>08932</td>
+                                    <td><button class="btn btn-sm">View</button></td>
+                                </tr>
+                                <tr>
+                                    <td>T012</td>
+                                    <td>Financial Audit</td>
+                                    <td>David Lee</td>
+                                    <td><span class="badge bg-success">Completed</span></td>
+                                    <td>2025-07-18</td>
+                                    <td><span class="badge bg-danger">High</span></td>
+                                    <td>08932</td>
+                                    <td><button class="btn btn-sm">View</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const dashboardData = {
+                totalJobs: 89,
+                totalReports: 49,
+                reportsCompleted: 30,
+                reportsRemaining: 19,
+                bankProgress: 90
+            };
+
+            const taskStatusData = {
+                'New': 25,
+                'In Progress': 40,
+                'Completed': 70,
+                'Overdue': 15
+            };
+
+            const taskStatusColors = {
+                'New': '#17a2b8',
+                'In Progress': '#ffc107',
+                'Completed': '#28a745',
+                'Overdue': '#dc3545'
+            };
+
+            const taskCompletionPercentage = Math.round((dashboardData.reportsCompleted / dashboardData.totalReports) * 100);
+
+            document.querySelector('.col-md-6:first-child .col-md-6:nth-child(1) .summary-card-value').textContent = dashboardData.totalJobs;
+            const totalJobsProgressBar = document.querySelector('.col-md-6:first-child .col-md-6:nth-child(1) .progress-bar');
+            totalJobsProgressBar.style.width = dashboardData.totalJobs + '%';
+            totalJobsProgressBar.setAttribute('aria-valuenow', dashboardData.totalJobs);
+            document.querySelector('.col-md-6:first-child .col-md-6:nth-child(1) .summary-progress-text span').textContent = dashboardData.totalJobs + '% Identified';
+
+            const totalTasksCardBody = document.querySelector('.col-md-6:first-child .col-md-6:nth-child(2) .card-body');
+            totalTasksCardBody.querySelector('.summary-card-value').textContent = dashboardData.totalReports;
+            totalTasksCardBody.querySelector('.summary-sub-data:nth-child(1) strong').textContent = dashboardData.reportsCompleted;
+            totalTasksCardBody.querySelector('.summary-sub-data:nth-child(2) strong').textContent = dashboardData.reportsRemaining;
+
+            const jobCompletionCardBody = document.querySelector('.col-md-6:first-child .col-md-6:nth-child(3) .card-body');
+            jobCompletionCardBody.querySelector('.summary-card-value').innerHTML = dashboardData.bankProgress + '<small>%</small>';
+            const jobCompletionProgressBar = jobCompletionCardBody.querySelector('.progress-bar');
+            jobCompletionProgressBar.style.width = dashboardData.bankProgress + '%';
+            jobCompletionProgressBar.setAttribute('aria-valuenow', dashboardData.bankProgress);
+            jobCompletionCardBody.querySelector('.summary-progress-text span').textContent = dashboardData.bankProgress + '% Achieved';
+
+            const taskCompletionCardBody = document.querySelector('.col-md-6:first-child .col-md-6:nth-child(4) .card-body');
+            taskCompletionCardBody.querySelector('.summary-card-value').innerHTML = taskCompletionPercentage + '<small>%</small>';
+            taskCompletionCardBody.querySelector('.summary-sub-data:nth-child(1) strong').textContent = dashboardData.reportsCompleted;
+            taskCompletionCardBody.querySelector('.summary-sub-data:nth-child(2) strong').textContent = dashboardData.reportsRemaining;
+
+            function renderTaskStatusDonutChart(canvasId, label, value, color) {
+                const ctx = document.getElementById(canvasId).getContext('2d');
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: [label, 'Remaining'],
+                        datasets: [{
+                            data: [value, 100 - value],
+                            backgroundColor: [color, 'rgba(255,255,255,0.06)'],
+                            borderColor: [color, 'rgba(255,255,255,0.13)'],
+                            borderWidth: 1.7
+                        }]
+                    },
+                    options: {
+                        responsive: false,
+                        maintainAspectRatio: false,
+                        cutout: '73%',
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { enabled: true }
+                        }
+                    }
+                });
+            }
+
+            renderTaskStatusDonutChart('taskStatusChart1', 'New', taskStatusData['New'], taskStatusColors['New']);
+            renderTaskStatusDonutChart('taskStatusChart2', 'In Progress', taskStatusData['In Progress'], taskStatusColors['In Progress']);
+            renderTaskStatusDonutChart('taskStatusChart3', 'Completed', taskStatusData['Completed'], taskStatusColors['Completed']);
+            renderTaskStatusDonutChart('taskStatusChart4', 'Overdue', taskStatusData['Overdue'], taskStatusColors['Overdue']);
+        });
+    </script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const calendarDays = document.getElementById('calendarDays');
+        const currentMonthYear = document.getElementById('currentMonthYear');
+        const prevMonthBtn = document.getElementById('prevMonth');
+        const nextMonthBtn = document.getElementById('nextMonth');
+
+        let today = new Date();
+        let viewMonth = today.getMonth();
+        let viewYear = today.getFullYear();
+
+        function renderCalendar() {
+            calendarDays.innerHTML = '';
+            const firstDayOfMonth = new Date(viewYear, viewMonth, 1);
+            const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+            const firstDayOfWeek = firstDayOfMonth.getDay();
+
+            currentMonthYear.textContent = new Date(viewYear, viewMonth).toLocaleString('en-US', {
+                month: 'long',
+                year: 'numeric'
+            });
+
+            for (let i = 0; i < firstDayOfWeek; i++) {
+                const dayDiv = document.createElement('div');
+                dayDiv.classList.add('inactive');
+                calendarDays.appendChild(dayDiv);
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayDiv = document.createElement('div');
+                dayDiv.textContent = day;
+                const date = new Date(viewYear, viewMonth, day);
+
+                if (
+                    date.getFullYear() === today.getFullYear() &&
+                    date.getMonth() === today.getMonth() &&
+                    date.getDate() === today.getDate()
+                ) {
+                    dayDiv.classList.add('current-day');
+                }
+
+                // Example: events on 5th and 18th
+                if (day === 5 || day === 18) {
+                    dayDiv.classList.add('has-event');
+                }
+                calendarDays.appendChild(dayDiv);
+            }
+        }
+
+        prevMonthBtn.addEventListener('click', () => {
+            viewMonth--;
+            if (viewMonth < 0) {
+                viewMonth = 11;
+                viewYear--;
+            }
+            renderCalendar();
+        });
+
+        nextMonthBtn.addEventListener('click', () => {
+            viewMonth++;
+            if (viewMonth > 11) {
+                viewMonth = 0;
+                viewYear++;
+            }
+            renderCalendar();
+        });
+
+        renderCalendar();
+    });
+    </script>
+</body>
+
+</html>
